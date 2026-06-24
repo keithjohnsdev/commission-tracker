@@ -10,7 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_23_204540) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_150626) do
+  create_table "advisors", force: :cascade do |t|
+    t.integer "agency_id", null: false
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "name"
+    t.datetime "updated_at", null: false
+    t.index ["agency_id"], name: "index_advisors_on_agency_id"
+  end
+
   create_table "agencies", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.decimal "default_commission_rate"
@@ -18,4 +27,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_204540) do
     t.string "name"
     t.datetime "updated_at", null: false
   end
+
+  add_foreign_key "advisors", "agencies"
 end

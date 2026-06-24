@@ -1,0 +1,24 @@
+{
+  // Use Ruby LSP for Ruby files and format on save (RuboCop via rubocop-rails-omakase)
+  "[ruby]": {
+    "editor.defaultFormatter": "Shopify.ruby-lsp",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.semanticHighlighting.enabled": true
+  },
+
+  // Ruby LSP uses RuboCop as the formatter/linter (auto-detected from the bundle).
+  // Use `rubocop_internal` (not `rubocop`) so Ruby LSP registers its own formatting
+  // provider — the bare `rubocop` identifier delegates to the RuboCop gem add-on,
+  // which doesn't reliably provide format-on-save in this version combo.
+  "rubyLsp.formatter": "rubocop_internal",
+
+  // Surface RuboCop offenses inline as you type
+  "rubyLsp.linters": ["rubocop"],
+
+  // Quality-of-life: trim trailing whitespace / ensure final newline on save
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true
+}

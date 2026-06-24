@@ -2,6 +2,14 @@
 
 <%= render @agency %>
 
+<h2>Advisors</h2>
+<ul>
+  <% @agency.advisors.each do |advisor| %>
+    <li><%= link_to advisor.name, advisor %> — <%= advisor.email %></li>
+  <% end %>
+</ul>
+<%= link_to "Add advisor", new_advisor_path %>
+
 <div>
   <%= link_to "Edit this agency", edit_agency_path(@agency) %> |
   <%= link_to "Back to agencies", agencies_path %>

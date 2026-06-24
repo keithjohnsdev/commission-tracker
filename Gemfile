@@ -52,6 +52,10 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Rails addon for Ruby LSP: schema-aware hover, go-to-definition for
+  # associations/callbacks, and runnable test/migration code lenses
+  gem "ruby-lsp-rails", require: false
 end
 
 group :development do

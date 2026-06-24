@@ -1,8 +1,28 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
-# Overwrite or add rules to create your own house style
-#
+# Overwrite or add rules to create your own house style.
+# Omakase disables most Layout cops; re-enable indentation so it's
+# autocorrected on save (Ruby LSP formats with `rubocop -a`).
+Layout/IndentationWidth:
+  Enabled: true
+  Width: 2
+Layout/IndentationConsistency:
+  Enabled: true
+Layout/IndentationStyle: # spaces, never tabs
+  Enabled: true
+Layout/InitialIndentation:
+  Enabled: true
+# Align `end`/`else` with their opening keyword
+Layout/EndAlignment:
+  Enabled: true
+Layout/DefEndAlignment:
+  Enabled: true
+Layout/BlockAlignment:
+  Enabled: true
+Layout/ElseAlignment:
+  Enabled: true
+
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:
 #   Enabled: false
