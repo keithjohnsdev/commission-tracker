@@ -1,0 +1,58 @@
+<%= form_with(model: booking) do |form| %>
+  <% if booking.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(booking.errors.count, "error") %> prohibited this booking from being saved:</h2>
+
+      <ul>
+        <% booking.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :advisor_id, style: "display: block" %>
+    <%= form.collection_select :advisor_id, Advisor.order(:name), :id, :name,
+        { prompt: "Select an advisor" } %>
+  </div>
+
+  <div>
+    <%= form.label :supplier_name, style: "display: block" %>
+    <%= form.text_field :supplier_name %>
+  </div>
+
+  <div>
+    <%= form.label :trip_name, style: "display: block" %>
+    <%= form.text_field :trip_name %>
+  </div>
+
+  <div>
+    <%= form.label :total_amount, style: "display: block" %>
+    <%= form.text_field :total_amount %>
+  </div>
+
+  <div>
+    <%= form.label :commission_rate, style: "display: block" %>
+    <%= form.text_field :commission_rate %>
+  </div>
+
+  <div>
+    <%= form.label :travel_date, style: "display: block" %>
+    <%= form.date_field :travel_date %>
+  </div>
+
+  <div>
+    <%= form.label :status, style: "display: block" %>
+    <%= form.select :status, ["pending", "traveled", "cancelled"] %>
+  </div>
+
+  <div>
+    <%= form.label :commission_received, style: "display: block" %>
+    <%= form.checkbox :commission_received %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

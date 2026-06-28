@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_150626) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_201353) do
   create_table "advisors", force: :cascade do |t|
     t.integer "agency_id", null: false
     t.datetime "created_at", null: false
@@ -28,5 +28,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_150626) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "bookings", force: :cascade do |t|
+    t.integer "advisor_id", null: false
+    t.decimal "commission_rate", precision: 5, scale: 4
+    t.boolean "commission_received", default: false, null: false
+    t.datetime "created_at", null: false
+    t.string "status", default: "pending"
+    t.string "supplier_name"
+    t.decimal "total_amount", precision: 10, scale: 2
+    t.date "travel_date"
+    t.string "trip_name"
+    t.datetime "updated_at", null: false
+    t.index ["advisor_id"], name: "index_bookings_on_advisor_id"
+  end
+
   add_foreign_key "advisors", "agencies"
+  add_foreign_key "bookings", "advisors"
 end
