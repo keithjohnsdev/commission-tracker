@@ -27,14 +27,27 @@
     <%= form.text_field :trip_name %>
   </div>
 
-  <div>
-    <%= form.label :total_amount, style: "display: block" %>
-    <%= form.text_field :total_amount %>
-  </div>
+  <div data-controller="commission-calculator"
+     data-commission-calculator-default-rate-value="<%= Agency.first&.default_commission_rate || 0 %>">
 
-  <div>
-    <%= form.label :commission_rate, style: "display: block" %>
-    <%= form.text_field :commission_rate %>
+    <div>
+      <%= form.label :total_amount, style: "display: block" %>
+      <%= form.number_field :total_amount, step: :any,
+            data: { commission_calculator_target: "amount",
+                    action: "input->commission-calculator#calculate" } %>
+    </div>
+
+    <div>
+      <%= form.label :commission_rate, "Commission rate (e.g. 0.15)", style: "display: block" %>
+      <%= form.number_field :commission_rate, step: :any,
+            data: { commission_calculator_target: "rate",
+                    action: "input->commission-calculator#calculate" } %>
+    </div>
+
+    <p>
+      Estimated commission:
+      <strong data-commission-calculator-target="output">$0.00</strong>
+    </p>
   </div>
 
   <div>
