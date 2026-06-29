@@ -1,0 +1,5 @@
+<p>
+  <strong>Total expected commission:</strong>
+  <%= number_to_currency(agency.bookings.sum(&:expected_commission)) %>
+  across <%= agency.bookings.count %> bookings
+</p>

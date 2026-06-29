@@ -40,5 +40,6 @@
     <%= booking.commission_received %>
   </div>
   <%= link_to "Edit", edit_booking_path(booking) %>
+  <%= link_to "Show", booking, data: { turbo_frame: "_top" } %>
 </div>
 <% end %>

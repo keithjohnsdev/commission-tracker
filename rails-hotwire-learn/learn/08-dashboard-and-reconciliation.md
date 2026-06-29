@@ -47,17 +47,16 @@ Generate a controller for the dashboard (no model — it's a read-only view):
 bin/rails generate controller Dashboards show
 ```
 
-Route it. `config/routes.rb`:
+Route it. Your `config/routes.rb` currently has flat `resources :bookings / :advisors / :agencies` (and `root` commented out). Make a **surgical** change — nest the dashboard under agencies, leave the other resources alone:
 ```ruby
-Rails.application.routes.draw do
-  resources :agencies do
-    resource :dashboard, only: :show     # → /agencies/:agency_id/dashboard
-  end
-  resources :advisors
-  resources :bookings
-  root "agencies#index"
+resources :agencies do
+  resource :dashboard, only: :show     # → /agencies/:agency_id/dashboard, helper: agency_dashboard_path
 end
+resources :advisors
+resources :bookings
+# (optional) root "agencies#index"     # currently commented out in your repo
 ```
+This gives the `agency_dashboard_path(agency)` helper the Step 09 system test relies on.
 
 `app/controllers/dashboards_controller.rb`:
 ```ruby
@@ -99,6 +98,8 @@ end
 
 Visit `/agencies/1/dashboard` → a roll-up plus the booking list.
 
+> **Two total surfaces — keep them straight.** Step 06 put a simple total on the **agency show** page with id `agency_<id>_total` (partial `agencies/_total`). This dashboard uses a richer roll-up with id `agency_<id>_rollup` (partial `dashboards/_rollup`). They are **separate ids on separate pages**, so a stream targeting one never touches the other: `create.turbo_stream.erb` (Step 06) replaces `…_total`; the toggle and broadcasts below replace `…_rollup`. (If you'd rather maintain one surface, point the dashboard at `agencies/_total`/`…_total` and drop the rollup — but the dashboard genuinely shows more, so keeping both is reasonable. Just don't expect a `…_total` stream to update the dashboard, or vice-versa.)
+
 ---
 
 ## Step 3 — A "mark received" toggle (a member route + Turbo Stream)
@@ -112,7 +113,7 @@ resources :bookings do
 end
 ```
 
-`app/controllers/bookings_controller.rb`:
+`app/controllers/bookings_controller.rb` — add a `toggle_received` action:
 ```ruby
 def toggle_received
   @booking = Booking.find(params[:id])
@@ -124,8 +125,9 @@ def toggle_received
   end
 end
 ```
+> Your scaffold finds records via a `set_booking` before_action that uses `params.expect(:id)`. You can either add `toggle_received` to that callback's list (`only: %i[ show edit update destroy toggle_received ]`) and drop the first line, or keep the explicit `Booking.find` shown here — both are fine.
 
-Add the button to the booking partial. In `app/views/bookings/_booking.html.erb`, inside the frame:
+Add the button to the booking partial. In `app/views/bookings/_booking.html.erb`, **inside the frame**, next to the existing `Edit`/`Show` links (before the closing `</div>` and `<% end %>`):
 ```erb
 <%= button_to (booking.commission_received? ? "✓ Received" : "Mark received"),
       toggle_received_booking_path(booking),
@@ -158,12 +160,13 @@ git add -A && git commit -m "Dashboard roll-ups + commission-received toggle via
 Right now the roll-up updates on the toggle. To also update it when a booking is **created/edited/deleted** elsewhere, broadcast a roll-up replace from the model (Step 06 style):
 
 ```ruby
-# app/models/booking.rb
+# app/models/booking.rb — these are IN ADDITION to the Step 06 list callbacks
 after_save_commit    -> { broadcast_replace_to agency, target: "agency_#{agency.id}_rollup",
                                                 partial: "dashboards/rollup", locals: { agency: agency } }
 after_destroy_commit -> { broadcast_replace_to agency, target: "agency_#{agency.id}_rollup",
                                                 partial: "dashboards/rollup", locals: { agency: agency } }
 ```
+> You'll now have two families of callbacks on `Booking`: the Step 06 ones that broadcast the **list** (`append`/`replace`/`remove` of the row) and these that broadcast the **roll-up**. They target different DOM ids (`bookings` / the row's `dom_id` vs `agency_<id>_rollup`), so they coexist cleanly. `after_save_commit` fires on both create and update — intentional, since any save should refresh the totals.
 
 Now any open dashboard reflects changes live. (This is the "totals need their own broadcast" caveat from Step 06, resolved.)
 

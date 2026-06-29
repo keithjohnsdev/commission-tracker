@@ -48,6 +48,8 @@ tuscany:
   commission_received: false
 ```
 
+> **Fixtures match your schema:** `bookings` also has `status` (defaults to `"pending"`) and `travel_date` — both nullable/defaulted, so the fixtures above can omit them. `commission_rate` is `decimal(5,4)` and `total_amount` is `decimal(10,2)`, so they load as `BigDecimal`; the `assert_equal 1280.00, …` comparisons still pass because `BigDecimal == Float` compares numerically.
+
 `test/models/booking_test.rb`:
 ```ruby
 require "test_helper"
@@ -80,7 +82,7 @@ class BookingTest < ActiveSupport::TestCase
 end
 ```
 
-Add an agency roll-up test, `test/models/agency_test.rb`:
+Add an agency roll-up test, `test/models/agency_test.rb` (this needs the `expected_commission_total` / `received_commission_total` / `outstanding_commission_total` methods from **Step 08 Step 1** — add those first or this test won't load):
 ```ruby
 require "test_helper"
 
@@ -107,7 +109,7 @@ bin/rails test
 
 A **system test** drives a real browser (Capybara + headless Chrome) — it verifies the Turbo/Stimulus flow actually works.
 
-`test/system/bookings_test.rb`:
+`test/system/bookings_test.rb` (needs the **Step 08** dashboard route `agency_dashboard_path` and the "Mark received" toggle):
 ```ruby
 require "application_system_test_case"
 

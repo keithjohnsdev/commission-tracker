@@ -32,6 +32,8 @@ Create the partial `app/views/agencies/_total.html.erb`:
 
 The wrapper id `agency_42_total` is the **target** a stream will replace. (We render through a partial so the *form response* and the *broadcast* can both reuse the exact same HTML — DRY.)
 
+> **Your repo:** Step 1 is already done — `app/views/agencies/show.html.erb` has the `agency_<id>_total` wrapper and `app/views/agencies/_total.html.erb` exists with the sum. Nothing to add here.
+
 ---
 
 ## Step 2 — Stream A: update the list as a response to the form
@@ -47,6 +49,8 @@ First, make the bookings index a streamable list. `app/views/bookings/index.html
 <%= link_to "New booking", new_booking_path %>
 ```
 
+> **Your repo:** `index.html.erb` already has the `<div id="bookings">` wrapper and `render @bookings`. **Do not put `turbo_stream_from @agency` on this page** — the index is `Booking.all` (every agency), so there's no single `@agency` to subscribe to, and `@agency` is `nil` in `BookingsController#index`. Per-agency subscription belongs on the agency page (Step 3). If you added that line to the index, remove it.
+
 Now teach the controller to answer the **`turbo_stream` format** on create. Rails picks the format from the request; Turbo sends `Accept: text/vnd.turbo-stream.html` for form submits.
 
 `app/controllers/bookings_controller.rb`:
@@ -56,10 +60,12 @@ def create
 
   respond_to do |format|
     if @booking.save
-      format.turbo_stream     # → renders create.turbo_stream.erb
-      format.html { redirect_to @booking, notice: "Booking created." }
+      format.turbo_stream                                   # → renders create.turbo_stream.erb
+      format.html { redirect_to @booking, notice: "Booking was successfully created." }
+      format.json { render :show, status: :created, location: @booking }
     else
-      format.html { render :new, status: :unprocessable_entity }
+      format.html { render :new, status: :unprocessable_content }
+      format.json { render json: @booking.errors, status: :unprocessable_content }
     end
   end
 end
@@ -80,13 +86,15 @@ Create `app/views/bookings/create.turbo_stream.erb`:
 
 > `turbo_stream.append "bookings", @booking` is shorthand — Turbo renders the `_booking` partial for you because you passed a record. You can also pass a block of explicit HTML (as in the `replace` above).
 
+> **Your repo:** `create` already responds with `format.turbo_stream`, and `app/views/bookings/create.turbo_stream.erb` already exists with exactly this content — Step 2 is done. **Reality check on targets:** a request-response stream only changes elements *on the page you're currently looking at*. The scaffold's "New booking" is a **separate page** (`/bookings/new`) that has neither `#bookings` nor `agency_<id>_total`, so after a normal create the stream has nothing to act on and you just see the redirect. The request-response stream pays off when the new-booking form lives **on the same page as the list** (inline on the agency page, or the Step 08 dashboard). For the standalone flow, it's the **broadcast** (next) that updates the list.
+
 ---
 
 ## Step 3 — Stream B: broadcast to *every* open tab
 
 So far the stream only updates the tab that submitted. To push updates to **all** connected browsers, **broadcast** from the model over **Action Cable** (WebSockets). Rails 8 wires this up with almost no config.
 
-`app/models/booking.rb` — add broadcast callbacks:
+`app/models/booking.rb` — **add** these three callbacks (your model already has `belongs_to :advisor`, `delegate :agency, to: :advisor`, the validations, `effective_rate`/`expected_commission`, and the `received`/`pending` scopes — keep all of that and just add the broadcasts):
 ```ruby
 class Booking < ApplicationRecord
   belongs_to :advisor
@@ -101,23 +109,48 @@ class Booking < ApplicationRecord
 end
 ```
 
-Then **subscribe** the page to that stream. On the page that shows the list (e.g. the agency show or the bookings index), add:
+Then **subscribe** a page to that stream. The catch (and the thing the original draft glossed over): the subscribing page needs both (a) an `@agency` to subscribe *to*, and (b) the DOM targets the broadcasts aim at — `#bookings` for the list, `agency_<id>_total` for the total. In your repo:
+
+| Page | has `@agency`? | has `#bookings`? | has `agency_<id>_total`? |
+|---|---|---|---|
+| `agencies/show` | ✅ yes (`set_agency`) | ❌ no (lists advisors, not bookings) | ✅ yes |
+| `bookings/index` | ❌ no (`Booking.all`) | ✅ yes | ❌ no |
+
+No existing page has all three — which is exactly why a bare `turbo_stream_from @agency` "did nothing" on the index. Make the **agency show page** the live surface: add the subscription *and* a bookings list so `append` has a target. `app/views/agencies/show.html.erb`:
 ```erb
-<%= turbo_stream_from @agency %>   <%# subscribe this browser to @agency's stream %>
+<%= turbo_stream_from @agency %>   <%# subscribe THIS page to @agency's stream %>
+
+<%= render @agency %>
+<div id="agency_<%= @agency.id %>_total">
+  <%= render "agencies/total", agency: @agency %>
+</div>
+
+<h2>Bookings</h2>
+<div id="bookings">                <%# broadcast append/replace/remove target %>
+  <%= render @agency.bookings %>
+</div>
 ```
+`@agency` comes from the existing `before_action :set_agency` in `AgenciesController` — no controller change needed.
 
-Now `broadcast_append_to agency, target: "bookings"` renders `_booking` server-side and pushes a `<turbo-stream action="append" target="bookings">` down the socket to **everyone subscribed to that agency** — open two tabs, create a booking in one, watch the other update.
+Now `broadcast_append_to agency, target: "bookings"` renders `_booking` server-side and pushes a `<turbo-stream action="append" target="bookings">` to **everyone subscribed to that agency** — open the agency page in two tabs, create a booking for one of its advisors, watch the other tab's list grow. (`broadcast_replace_to`/`broadcast_remove_to` "just work" because `_booking` is wrapped in `turbo_frame_tag dom_id(booking)` from Step 05, so the target id is derived from the record.)
 
-- **`broadcast_*_to <stream>`** — which channel to push to (here, scoped per agency so hosts don't see each other's data).
-- **`target:`** — the DOM id to act on (defaults to the model's `dom_id`, which is why `_booking` being wrapped in `turbo_frame_tag dom_id(booking)` from Step 05 makes `replace`/`remove` "just work").
+- **`broadcast_*_to <stream>`** — which channel to push to (the per-agency stream, so Agency A's hosts never see Agency B's bookings).
+- **`target:`** — the DOM id to act on (`append` needs the explicit `"bookings"`; `replace`/`remove` default to the record's `dom_id`).
 
-> **Heads-up:** broadcasting fires from model callbacks, so the **total** won't auto-update via broadcast unless you also broadcast it. Add a callback that broadcasts a `replace` of `agency_<id>_total`, or keep totals on the request-response stream and broadcast only the list. Be deliberate — say *why* you chose one.
+> **Heads-up — the total doesn't broadcast itself.** These callbacks push only the *list*. The `agency_<id>_total` re-render happens on the **request-response** stream (`create.turbo_stream.erb`), not the broadcast. So in the two-tab demo the list updates live but the *other* tab's total goes stale until reload. Either accept that for now, or broadcast the total too (Step 08 does exactly this for the dashboard's roll-up). Be deliberate and say *why*.
+
+> **Leave `bookings/index` alone:** it stays a plain, non-live `Booking.all` list. If you ever want it live, you'd scope it to one agency (`@agency = Agency.find(params[:agency_id])` behind a nested route) — which is the design choice Step 08's dashboard makes properly.
 
 ---
 
 ## Step 4 — Mirror it for update & destroy (request-response)
 
-For completeness, add `format.turbo_stream` to `update` and `destroy` and the matching `update.turbo_stream.erb` / `destroy.turbo_stream.erb` (replace the row + replace the total; for destroy, `turbo_stream.remove @booking` + replace the total). The pattern is identical: **name an operation, name a target, hand it HTML.**
+For completeness, mirror the create flow for `update` and `destroy`. In your repo these actions currently only have `format.html` (redirect with `status: :see_other`) and `format.json` — **add `format.turbo_stream`** to each and create the matching templates:
+
+- `app/views/bookings/update.turbo_stream.erb` → `turbo_stream.replace @booking` (re-render the row via its `dom_id` frame) + replace the `agency_<id>_total`.
+- `app/views/bookings/destroy.turbo_stream.erb` → `turbo_stream.remove @booking` + replace the `agency_<id>_total`.
+
+The pattern is identical: **name an operation, name a target, hand it HTML.** (The broadcast side already covers live multi-tab updates; this is the request-response side for the acting tab.)
 
 Commit:
 ```bash

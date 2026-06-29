@@ -1,0 +1,5 @@
+<%= turbo_stream.append "bookings", @booking %>
+
+<%= turbo_stream.replace "agency_#{@booking.agency.id}_total" do %>
+  <%= render "agencies/total", agency: @booking.agency %>
+<% end %>

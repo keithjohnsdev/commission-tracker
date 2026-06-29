@@ -1,6 +1,20 @@
 class Booking < ApplicationRecord
   belongs_to :advisor
-  delegate :agency, to: :advisor          # booking.agency → advisor's agency
+  delegate :agency, to: :advisor
+  # booking.agency → advisor's agency
+
+  # Broadcast list changes to a per-agency stream
+  after_create_commit  -> { broadcast_append_to agency, target: "bookings" }
+  after_update_commit  -> { broadcast_replace_to agency }
+  after_destroy_commit -> { broadcast_remove_to agency }
+  after_save_commit    -> { broadcast_replace_to agency,
+                            target:  "agency_#{agency.id}_total",
+                            partial: "agencies/total",
+                            locals:  { agency: agency } }
+  after_destroy_commit -> { broadcast_replace_to agency,
+                              target:  "agency_#{agency.id}_total",
+                              partial: "agencies/total",
+                              locals:  { agency: agency } }
 
   validates :supplier_name, :trip_name, presence: true
   validates :total_amount,

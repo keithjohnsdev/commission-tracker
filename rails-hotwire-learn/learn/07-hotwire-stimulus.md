@@ -77,20 +77,32 @@ export default class extends Controller {
 
 ## Step 4 — Wire the HTML in the booking form
 
-In `app/views/bookings/_form.html.erb`, wrap the amount/rate fields and a preview in the controller's markup:
+In `app/views/bookings/_form.html.erb`, your amount and rate fields are currently plain `text_field`s:
+```erb
+<div>
+  <%= form.label :total_amount, style: "display: block" %>
+  <%= form.text_field :total_amount %>
+</div>
+
+<div>
+  <%= form.label :commission_rate, style: "display: block" %>
+  <%= form.text_field :commission_rate %>
+</div>
+```
+Replace **those two `<div>`s** with a single region wrapped in the controller — switch the inputs to `number_field` (so `step: :any` allows decimals) and add the target/action data attributes plus a live output:
 ```erb
 <div data-controller="commission-calculator"
      data-commission-calculator-default-rate-value="<%= Agency.first&.default_commission_rate || 0 %>">
 
   <div>
-    <%= form.label :total_amount %>
+    <%= form.label :total_amount, style: "display: block" %>
     <%= form.number_field :total_amount, step: :any,
           data: { commission_calculator_target: "amount",
                   action: "input->commission-calculator#calculate" } %>
   </div>
 
   <div>
-    <%= form.label :commission_rate, "Commission rate (e.g. 0.15)" %>
+    <%= form.label :commission_rate, "Commission rate (e.g. 0.15)", style: "display: block" %>
     <%= form.number_field :commission_rate, step: :any,
           data: { commission_calculator_target: "rate",
                   action: "input->commission-calculator#calculate" } %>
@@ -104,6 +116,10 @@ In `app/views/bookings/_form.html.erb`, wrap the amount/rate fields and a previe
 ```
 
 **Try it:** open `/bookings/new`, type `8000` and `0.16` → the preview reads **$1,280.00**, updating on every keystroke. Clear the rate → it falls back to the agency default value. No network requests (watch the Network tab — nothing fires).
+
+> **Honest caveat on `Agency.first`:** your booking form picks an **advisor** (via `collection_select`), and the real default rate belongs to *that advisor's* agency — which the browser can't know until an advisor is chosen. `Agency.first&.default_commission_rate` is a **demo stand-in** that works because you have one agency. To make the fallback truly correct you'd refresh the value when the advisor changes (a `defaultRateValueChanged()` callback driven by a second action on the advisor `<select>`, or a tiny fetch). Fine to leave for the exercise — just know *why* it's a stand-in.
+
+> **Stimulus is already wired** in your repo: `config/importmap.rb` pins `@hotwired/stimulus` and `pin_all_from "app/javascript/controllers"`, and there's a sample `hello_controller.js`. The generator just drops in your new file — no manual registration.
 
 Commit:
 ```bash

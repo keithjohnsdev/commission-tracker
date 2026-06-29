@@ -46,6 +46,8 @@ Rails 8's scaffold already rendered a partial for one booking at `app/views/book
 - **`dom_id(booking)`** is a Rails helper that returns a stable, unique id like `"booking_42"` — use it everywhere so frames, streams, and DOM ids all agree.
 - The **`Edit` link is *inside* the frame**, so clicking it loads its response *into this frame* — not the whole page.
 
+> **Your repo:** the scaffold's `_booking.html.erb` has *all* the columns (advisor, supplier, trip, amount, rate, travel date, status, commission received), not the three shown above. The example here is trimmed for readability — when you do this, **keep your real fields** and only swap the outer `<div id="…">` for `turbo_frame_tag dom_id(booking) do … end`. Put the `Edit` (and `Show`) link *inside* the frame so streamed-in rows include them too. This is already done in your repo.
+
 ---
 
 ## Step 2 — Make the edit view answer with a matching frame
@@ -73,22 +75,30 @@ That's the whole trick:
 The scaffold's `update` action already does the right thing:
 
 ```ruby
-# app/controllers/bookings_controller.rb (generated)
+# app/controllers/bookings_controller.rb (your repo — Rails 8.1 scaffold)
 def update
-  if @booking.update(booking_params)
-    redirect_to @booking, notice: "Booking was successfully updated."
-  else
-    render :edit, status: :unprocessable_entity
+  respond_to do |format|
+    if @booking.update(booking_params)
+      format.html { redirect_to @booking, notice: "Booking was successfully updated.", status: :see_other }
+      format.json { render :show, status: :ok, location: @booking }
+    else
+      format.html { render :edit, status: :unprocessable_content }
+      format.json { render json: @booking.errors, status: :unprocessable_content }
+    end
   end
 end
 ```
 
-On success it **redirects to the show page**. Turbo follows the redirect, finds `<turbo-frame id="booking_42">` on that page (because `show.html.erb` does `render @booking`), and swaps the **read view** back into the frame. Form → saved row, no reload.
+On success it **redirects to the show page** (with `status: :see_other` — the redirect-after-form-submit status Turbo expects). Turbo follows the redirect, finds `<turbo-frame id="booking_42">` on that page (your `show.html.erb` does `render @booking`, so the frame is there), and swaps the **read view** back into the frame. Form → saved row, no reload.
 
-Make sure `app/views/bookings/show.html.erb` renders the partial:
+Your `app/views/bookings/show.html.erb` already renders the partial (that's what makes redirect-swaps-back work):
 ```erb
 <%= render @booking %>
-<%= link_to "Back to bookings", bookings_path %>
+<div>
+  <%= link_to "Edit this booking", edit_booking_path(@booking) %> |
+  <%= link_to "Back to bookings", bookings_path %>
+  <%= button_to "Destroy this booking", @booking, method: :delete %>
+</div>
 ```
 
 **Try it:** go to `/bookings`, click Edit on one row. It becomes a form. Change the rate, Save. The row updates in place — the rest of the page never flickered.
@@ -97,7 +107,7 @@ Make sure `app/views/bookings/show.html.erb` renders the partial:
 
 ## Step 4 — A note on the validation-error path
 
-When `update` fails validation it does `render :edit, status: :unprocessable_entity`. Because the response *still contains the matching frame* (the edit form with error messages), Turbo swaps the errored form back into the frame. **Inline editing keeps working even on errors** — that `unprocessable_entity` (422) status is what tells Turbo to render the body of a failed form submission. Don't remove it.
+When `update` fails validation it does `render :edit, status: :unprocessable_content`. (Rails 8.1's scaffold uses `:unprocessable_content`; older guides say `:unprocessable_entity` — **same HTTP 422**, just the renamed IANA label. Either symbol works.) Because the response *still contains the matching frame* (the edit form with error messages), Turbo swaps the errored form back into the frame. **Inline editing keeps working even on errors** — that 422 status is what tells Turbo to render the body of a failed form submission. Don't remove it.
 
 Commit:
 ```bash
