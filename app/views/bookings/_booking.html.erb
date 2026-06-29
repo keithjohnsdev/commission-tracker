@@ -1,4 +1,5 @@
-<div id="<%= dom_id booking %>">
+<%= turbo_frame_tag dom_id(booking) do %>
+<div class="booking">
   <div>
     <strong>Advisor:</strong>
     <%= booking.advisor_id %>
@@ -38,5 +39,6 @@
     <strong>Commission received:</strong>
     <%= booking.commission_received %>
   </div>
-
+  <%= link_to "Edit", edit_booking_path(booking) %>
 </div>
+<% end %>

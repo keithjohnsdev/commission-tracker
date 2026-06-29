@@ -2,7 +2,9 @@
 
 <h1>Editing booking</h1>
 
-<%= render "form", booking: @booking %>
+<%= turbo_frame_tag dom_id(@booking) do %>
+  <%= render "form", booking: @booking %>
+
 
 <br>
 
@@ -10,3 +12,4 @@
   <%= link_to "Show this booking", @booking %> |
   <%= link_to "Back to bookings", bookings_path %>
 </div>
+<% end %>
