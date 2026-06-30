@@ -1,0 +1,12 @@
+<h1><%= @agency.name %> — Commission Dashboard</h1>
+
+<%= turbo_stream_from @agency %>   <%# live updates from broadcasts (Step 06) %>
+
+<div id="agency_<%= @agency.id %>_rollup">
+  <%= render "dashboards/rollup", agency: @agency %>
+</div>
+
+<h2>Bookings</h2>
+<div id="bookings">
+  <%= render @bookings %>
+</div>

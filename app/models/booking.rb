@@ -10,11 +10,16 @@ class Booking < ApplicationRecord
   after_save_commit    -> { broadcast_replace_to agency,
                             target:  "agency_#{agency.id}_total",
                             partial: "agencies/total",
-                            locals:  { agency: agency } }
+                            locals:  { agency: agency }
+                            broadcast_update_to agency, target: "agency_#{agency.id}_rollup",
+                                                  partial: "dashboards/rollup", locals: { agency: agency } }
   after_destroy_commit -> { broadcast_replace_to agency,
                               target:  "agency_#{agency.id}_total",
                               partial: "agencies/total",
-                              locals:  { agency: agency } }
+                              locals:  { agency: agency }
+                            broadcast_replace_to agency, target: "agency_#{agency.id}_rollup",
+                                              partial: "dashboards/rollup", locals: { agency: agency }
+  }
 
   validates :supplier_name, :trip_name, presence: true
   validates :total_amount,

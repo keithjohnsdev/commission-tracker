@@ -1,7 +1,13 @@
 Rails.application.routes.draw do
-  resources :bookings
+  get "dashboards/show"
+  resources :bookings do
+    patch :toggle_received, on: :member        # → /bookings/:id/toggle_received
+  end
+
   resources :advisors
-  resources :agencies
+  resources :agencies do
+    resource :dashboard, only: :show     # → /agencies/:agency_id/dashboard, helper: agency_dashboard_path
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -13,5 +19,5 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "agencies#index"
 end

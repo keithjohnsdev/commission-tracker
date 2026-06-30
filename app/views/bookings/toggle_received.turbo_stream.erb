@@ -1,0 +1,6 @@
+<%= turbo_stream.replace @booking %>   <%# re-render this booking's frame (uses dom_id) %>
+
+<%# update (not replace) so the styled <div id="..._rollup"> wrapper + id survive each toggle %>
+<%= turbo_stream.update "agency_#{@booking.agency.id}_rollup" do %>
+  <%= render "dashboards/rollup", agency: @booking.agency %>
+<% end %>

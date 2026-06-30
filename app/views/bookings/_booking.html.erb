@@ -39,6 +39,12 @@
     <strong>Commission received:</strong>
     <%= booking.commission_received %>
   </div>
+
+  <%= button_to (booking.commission_received? ? "✓ Received" : "Mark received"),
+    toggle_received_booking_path(booking),
+    method: :patch,
+    form: { data: { turbo_frame: "_top" } },
+    class: booking.commission_received? ? "received" : "pending" %>
   <%= link_to "Edit", edit_booking_path(booking) %>
   <%= link_to "Show", booking, data: { turbo_frame: "_top" } %>
 </div>

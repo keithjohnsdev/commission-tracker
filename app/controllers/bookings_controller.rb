@@ -25,8 +25,7 @@ class BookingsController < ApplicationController
 
     respond_to do |format|
       if @booking.save
-        format.turbo_stream
-        format.html { redirect_to @booking, notice: "Booking was successfully created." }
+        format.html { redirect_to bookings_path, notice: "Booking was successfully created." }
         format.json { render :show, status: :created, location: @booking }
       else
         format.html { render :new, status: :unprocessable_content }
@@ -45,6 +44,16 @@ class BookingsController < ApplicationController
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @booking.errors, status: :unprocessable_content }
       end
+    end
+  end
+
+  def toggle_received
+    @booking = Booking.find(params[:id])
+    @booking.update!(commission_received: !@booking.commission_received)
+
+    respond_to do |format|
+      format.turbo_stream     # → toggle_received.turbo_stream.erb
+      format.html { redirect_back fallback_location: bookings_path }
     end
   end
 

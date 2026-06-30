@@ -1,6 +1,4 @@
-<p style="color: green"><%= notice %></p>
-
-<%= turbo_stream_from @agency %>   <%# subscribe THIS page to @agency's stream %>
+<%= turbo_stream_from @agency %>   <%# subscribe to this agency's stream %>
 
 <%= render @agency %>
 <div id="agency_<%= @agency.id %>_total">
@@ -13,15 +11,14 @@
     <li><%= link_to advisor.name, advisor %> — <%= advisor.email %></li>
   <% end %>
 </ul>
-<%= link_to "Add advisor", new_advisor_path %>
+<%= link_to "Add advisor", new_advisor_path, class: "btn" %>
 
 <h2>Bookings</h2>
 <div id="bookings">                <%# broadcast append/replace/remove target %>
   <%= render @agency.bookings %>
 </div>
-<div>
-  <%= link_to "Edit this agency", edit_agency_path(@agency) %> |
+<div class="actions">
+  <%= link_to "Edit this agency", edit_agency_path(@agency) %>
   <%= link_to "Back to agencies", agencies_path %>
-
-  <%= button_to "Destroy this agency", @agency, method: :delete %>
+  <%= button_to "Destroy this agency", @agency, method: :delete, class: "btn btn--danger" %>
 </div>

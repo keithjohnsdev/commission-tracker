@@ -1,0 +1,6 @@
+<dl class="rollup">
+  <dt>Bookings</dt>          <dd><%= agency.bookings.count %></dd>
+  <dt>Expected</dt>         <dd><%= number_to_currency(agency.expected_commission_total) %></dd>
+  <dt>Received</dt>         <dd><%= number_to_currency(agency.received_commission_total) %></dd>
+  <dt>Outstanding</dt>      <dd><%= number_to_currency(agency.outstanding_commission_total) %></dd>
+</dl>
