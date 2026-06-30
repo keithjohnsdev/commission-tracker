@@ -20,7 +20,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       post bookings_url, params: { booking: { advisor_id: @booking.advisor_id, commission_rate: @booking.commission_rate, commission_received: @booking.commission_received, status: @booking.status, supplier_name: @booking.supplier_name, total_amount: @booking.total_amount, travel_date: @booking.travel_date, trip_name: @booking.trip_name } }
     end
 
-    assert_redirected_to booking_url(Booking.last)
+    assert_redirected_to bookings_url
   end
 
   test "should show booking" do

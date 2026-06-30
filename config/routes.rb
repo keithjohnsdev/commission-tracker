@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  get "dashboards/show"
   resources :bookings do
     patch :toggle_received, on: :member        # → /bookings/:id/toggle_received
   end

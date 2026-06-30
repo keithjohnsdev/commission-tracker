@@ -1,11 +1,11 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  iata_number: MyString
-  default_commission_rate: 9.99
+  name: Wanderlust Collective
+  iata_number: "12345678"
+  default_commission_rate: 0.15
 
 two:
-  name: MyString
-  iata_number: MyString
-  default_commission_rate: 9.99
+  name: Horizon Travel Co
+  iata_number: "87654321"
+  default_commission_rate: 0.12
